@@ -1,0 +1,112 @@
+__author__ = 'bboling'
+
+import tweepy
+import datetime as dt
+import numpy as np
+import pandas as pd
+import sys
+import os
+import shutil
+
+
+# enter consumer key and access token
+consumer_key = 'cykRTcVpJZfs5QQTFwLxqn7pD'
+consumer_secret = 'x6XwVSQujvbEGRCDn22wwY1fDs5Nlu6PDven5DfUJHY5GG9ziQ'
+access_token = '758889338289524736-GND0t04FIK66pF97vTiFtRmweimyFTl'
+access_token_secret= 'p5gT2ozy6hnjGGvaXlc8yAWgS8V7Bp8DMstqVkGqPQQkV'
+
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+
+api = tweepy.API(auth)
+
+'''
+# make my profile look pretty
+api.update_profile_image('miss_millie.jpg')
+api.update_profile_banner('lake.jpg')
+'''
+
+
+'''
+# grab home timeline first 20
+home = api.home_timeline()
+
+
+
+# post a status
+status = '"The demand for certainty is one which is natural to man, but is nevertheless an intellectual vice."-Russell'
+api.update_status(status)
+
+
+# delete a status
+id = api.user_timeline('bboling31')[0].id # most recent status
+api.destroy_status(id)
+
+'''
+
+# grab all of donald's tweets since becoming prez
+day0 = '01/20/17 12:00:00'
+start = dt.datetime.strptime(day0,'%m/%d/%y %H:%M:%S')
+user = 'realDonaldTrump'
+now = dt.datetime.now()
+
+
+# storage for tweets
+tweet_text = []
+creation = []
+tweet_id = []
+name = []
+device = []
+location = []
+time_zone = []
+hashtags = []
+url = []
+user_mention = []
+retweets = []
+
+current = now
+while current >= start:
+    if current == now:
+        tweets = api.user_timeline(user, count = 10)
+        for t in tweets:
+            tweet_text.append(t.text)
+            creation.append(t.created_at)
+            tweet_id.append(t.id)
+            name.append(t.author.name)
+            device.append(t.source)
+            location.append(t.user.location)
+            time_zone.append(t.user.time_zone)
+            hashtags.append(t.entities['hashtags'])
+            url.append(t.entities['urls'])
+            user_mention.append(t.entities['user_mentions'])
+            retweets.append(t.retweet_count)
+    else:
+        tweets = api.user_timeline(user, count = 10, max_id = id_temp-1)
+        for t in tweets:
+            tweet_text.append(t.text)
+            creation.append(t.created_at)
+            tweet_id.append(t.id)
+            name.append(t.author.name)
+            device.append(t.source)
+            location.append(t.user.location)
+            time_zone.append(t.user.time_zone)
+            hashtags.append(t.entities['hashtags'])
+            url.append(t.entities['urls'])
+            user_mention.append(t.entities['user_mentions'])
+            retweets.append(t.retweet_count)
+
+    current = tweets[-1].created_at
+    id_temp = tweets[-1].id
+
+
+tweets_out = pd.DataFrame([tweet_text,creation,tweet_id,name,device,location,time_zone,hashtags,url,user_mention,retweets],
+                          index=['Tweet','Time','ID','User_Name','Device','Location','Time_Zone','Hashtags','URL','User_Mentions','Retweet_Count']).T
+
+tweets_out.to_pickle('tweets_store.pkl')
+
+loaded = pd.read_pickle('tweets_store.pkl')
+
+
+loaded.to_csv('test.csv',encoding='utf-8')
+
+print('\n'*3,'fin','\n'*3)
